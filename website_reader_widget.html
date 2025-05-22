@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Vorlesegerät</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .reader-container {
+            max-width: 100%;
+            height: 100vh;
+            background: white;
+            border: 2px solid #007acc;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reader-header {
+            background: #007acc;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .controls {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .btn-primary {
+            background: #007acc;
+            color: white;
+        }
+
+        .btn-primary:hover, .btn-primary:focus {
+            background: #005c99;
+            outline: 3px solid #ffdd00;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover, .btn-secondary:focus {
+            background: #545b62;
+            outline: 3px solid #ffdd00;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover, .btn-success:focus {
+            background: #1e7e34;
+            outline: 3px solid #ffdd00;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover, .btn-danger:focus {
+            background: #c82333;
+            outline: 3px solid #ffdd00;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speed-slider {
+            width: 100px;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .status {
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            border-left: 4px solid #007acc;
+        }
+
+        .current-heading {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .heading-level {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .heading-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .following-text {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .navigation-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .keyboard-shortcuts {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .shortcut-list {
+            list-style: none;
+            margin: 10px 0 0 0;
+        }
+
+        .shortcut-list li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .key {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .speaking {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { background-color: #fff3cd; }
+            50% { background-color: #ffe69c; }
+            100% { background-color: #fff3cd; }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="reader-container">
+        <div class="reader-header">
+            Website Vorlesegerät - Barrierefreie Navigation
+        </div>
+
+        <div class="controls">
+            <button id="scanBtn" class="btn btn-primary" title="Website nach Überschriften durchsuchen">
+                Website scannen
+            </button>
+            <button id="prevBtn" class="btn btn-secondary" title="Zur vorherigen Überschrift" disabled>
+                ← Zurück
+            </button>
+            <button id="nextBtn" class="btn btn-secondary" title="Zur nächsten Überschrift" disabled>
+                Weiter →
+            </button>
+            <button id="readBtn" class="btn btn-success" title="Aktuellen Abschnitt vorlesen" disabled>
+                🔊 Vorlesen
+            </button>
+            <button id="stopBtn" class="btn btn-danger" title="Vorlesen stoppen" disabled>
+                ⏹ Stopp
+            </button>
+            
+            <div class="speed-control">
+                <label for="speedSlider">Geschwindigkeit:</label>
+                <input type="range" id="speedSlider" class="speed-slider" min="0.5" max="2" step="0.1" value="1" title="Vorlesegeschwindigkeit anpassen">
+                <span id="speedValue">1.0x</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="status" role="status" aria-live="polite">
+                Bereit zum Scannen. Klicken Sie auf "Website scannen" um zu beginnen.
+            </div>
+
+            <div class="navigation-info" style="display: none;">
+                <strong>Navigation:</strong>
+                <span id="navInfo">0 von 0 Überschriften</span>
+            </div>
+
+            <div id="currentContent" style="display: none;">
+                <div class="current-heading">
+                    <div class="heading-level" id="headingLevel"></div>
+                    <div class="heading-text" id="headingText"></div>
+                </div>
+                <div class="following-text" id="followingText"></div>
+            </div>
+
+            <div class="keyboard-shortcuts">
+                <strong>Tastaturkürzel:</strong>
+                <ul class="shortcut-list">
+                    <li><span class="key">S</span> - Website scannen</li>
+                    <li><span class="key">←</span> oder <span class="key">P</span> - Vorherige Überschrift</li>
+                    <li><span class="key">→</span> oder <span class="key">N</span> - Nächste Überschrift</li>
+                    <li><span class="key">Leertaste</span> oder <span class="key">R</span> - Vorlesen</li>
+                    <li><span class="key">Esc</span> - Stoppen</li>
+                    <li><span class="key">+</span> - Schneller</li>
+                    <li><span class="key">-</span> - Langsamer</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class WebsiteReader {
+            constructor() {
+                this.headings = [];
+                this.currentIndex = -1;
+                this.synthesis = window.speechSynthesis;
+                this.currentUtterance = null;
+                this.isReading = false;
+                this.speed = 1.0;
+                
+                this.initializeElements();
+                this.attachEventListeners();
+                this.setupKeyboardNavigation();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    scanBtn: document.getElementById('scanBtn'),
+                    prevBtn: document.getElementById('prevBtn'),
+                    nextBtn: document.getElementById('nextBtn'),
+                    readBtn: document.getElementById('readBtn'),
+                    stopBtn: document.getElementById('stopBtn'),
+                    speedSlider: document.getElementById('speedSlider'),
+                    speedValue: document.getElementById('speedValue'),
+                    status: document.querySelector('.status'),
+                    navInfo: document.getElementById('navInfo'),
+                    navigationInfo: document.querySelector('.navigation-info'),
+                    currentContent: document.getElementById('currentContent'),
+                    headingLevel: document.getElementById('headingLevel'),
+                    headingText: document.getElementById('headingText'),
+                    followingText: document.getElementById('followingText')
+                };
+            }
+
+            attachEventListeners() {
+                this.elements.scanBtn.addEventListener('click', () => this.scanWebsite());
+                this.elements.prevBtn.addEventListener('click', () => this.navigateToHeading(-1));
+                this.elements.nextBtn.addEventListener('click', () => this.navigateToHeading(1));
+                this.elements.readBtn.addEventListener('click', () => this.readCurrentSection());
+                this.elements.stopBtn.addEventListener('click', () => this.stopReading());
+                
+                this.elements.speedSlider.addEventListener('input', (e) => {
+                    this.speed = parseFloat(e.target.value);
+                    this.elements.speedValue.textContent = this.speed.toFixed(1) + 'x';
+                });
+            }
+
+            setupKeyboardNavigation() {
+                document.addEventListener('keydown', (e) => {
+                    // Verhindern, dass Tastaturkürzel funktionieren, wenn ein Input-Element fokussiert ist
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                    
+                    switch(e.key.toLowerCase()) {
+                        case 's':
+                            e.preventDefault();
+                            this.scanWebsite();
+                            break;
+                        case 'arrowleft':
+                        case 'p':
+                            e.preventDefault();
+                            this.navigateToHeading(-1);
+                            break;
+                        case 'arrowright':
+                        case 'n':
+                            e.preventDefault();
+                            this.navigateToHeading(1);
+                            break;
+                        case ' ':
+                        case 'r':
+                            e.preventDefault();
+                            this.readCurrentSection();
+                            break;
+                        case 'escape':
+                            e.preventDefault();
+                            this.stopReading();
+                            break;
+                        case '+':
+                        case '=':
+                            e.preventDefault();
+                            this.adjustSpeed(0.1);
+                            break;
+                        case '-':
+                            e.preventDefault();
+                            this.adjustSpeed(-0.1);
+                            break;
+                    }
+                });
+            }
+
+            scanWebsite() {
+                try {
+                    // Versuche, auf das Eltern-Dokument zuzugreifen
+                    let targetDoc = window.parent.document;
+                    
+                    // Fallback: Wenn das nicht funktioniert, verwende das aktuelle Dokument
+                    if (!targetDoc || targetDoc === document) {
+                        targetDoc = document;
+                        this.updateStatus('Hinweis: Scanning des eigenen Dokuments (Testmodus)');
+                    }
+
+                    const headingSelector = 'h1, h2, h3, h4, h5, h6';
+                    const foundHeadings = targetDoc.querySelectorAll(headingSelector);
+                    
+                    this.headings = Array.from(foundHeadings).map((heading, index) => {
+                        return {
+                            element: heading,
+                            level: heading.tagName.toLowerCase(),
+                            text: heading.textContent.trim(),
+                            followingText: this.getFollowingText(heading),
+                            index: index
+                        };
+                    });
+
+                    if (this.headings.length === 0) {
+                        this.updateStatus('Keine Überschriften gefunden. Möglicherweise blockiert die Website den Zugriff.');
+                        this.speak('Keine Überschriften gefunden');
+                        return;
+                    }
+
+                    this.currentIndex = 0;
+                    this.updateNavigation();
+                    this.displayCurrentHeading();
+                    this.updateStatus(`${this.headings.length} Überschriften gefunden. Navigation aktiviert.`);
+                    this.speak(`${this.headings.length} Überschriften gefunden. Sie befinden sich bei der ersten Überschrift.`);
+                    
+                } catch (error) {
+                    console.error('Fehler beim Scannen:', error);
+                    this.updateStatus('Fehler beim Zugriff auf die Website. Möglicherweise verhindert die Same-Origin-Policy den Zugriff.');
+                    this.speak('Fehler beim Scannen der Website');
+                }
+            }
+
+            getFollowingText(heading) {
+                let text = '';
+                let currentElement = heading.nextElementSibling;
+                let wordCount = 0;
+                const maxWords = 100; // Begrenze auf etwa 100 Wörter
+
+                while (currentElement && wordCount < maxWords) {
+                    // Stoppe bei der nächsten Überschrift
+                    if (currentElement.matches('h1, h2, h3, h4, h5, h6')) {
+                        break;
+                    }
+
+                    const elementText = currentElement.textContent.trim();
+                    if (elementText) {
+                        const words = elementText.split(/\s+/);
+                        const remainingWords = maxWords - wordCount;
+                        
+                        if (words.length <= remainingWords) {
+                            text += elementText + ' ';
+                            wordCount += words.length;
+                        } else {
+                            text += words.slice(0, remainingWords).join(' ') + '...';
+                            break;
+                        }
+                    }
+
+                    currentElement = currentElement.nextElementSibling;
+                }
+
+                return text.trim() || 'Kein nachfolgender Text gefunden.';
+            }
+
+            navigateToHeading(direction) {
+                if (this.headings.length === 0) return;
+
+                const newIndex = this.currentIndex + direction;
+                
+                if (newIndex >= 0 && newIndex < this.headings.length) {
+                    this.currentIndex = newIndex;
+                    this.displayCurrentHeading();
+                    this.updateNavigation();
+                    
+                    const heading = this.headings[this.currentIndex];
+                    this.speak(`${heading.level.toUpperCase()}: ${heading.text}`);
+                    
+                    // Scrolle zur Überschrift im Eltern-Dokument
+                    try {
+                        heading.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } catch (error) {
+                        console.log('Scrolling nicht möglich:', error);
+                    }
+                }
+            }
+
+            displayCurrentHeading() {
+                if (this.currentIndex < 0 || this.currentIndex >= this.headings.length) return;
+
+                const heading = this.headings[this.currentIndex];
+                
+                this.elements.headingLevel.textContent = heading.level.toUpperCase();
+                this.elements.headingText.textContent = heading.text;
+                this.elements.followingText.textContent = heading.followingText;
+                
+                this.elements.currentContent.style.display = 'block';
+                this.elements.navigationInfo.style.display = 'block';
+            }
+
+            updateNavigation() {
+                const hasHeadings = this.headings.length > 0;
+                const hasNext = this.currentIndex < this.headings.length - 1;
+                const hasPrev = this.currentIndex > 0;
+
+                this.elements.prevBtn.disabled = !hasPrev;
+                this.elements.nextBtn.disabled = !hasNext;
+                this.elements.readBtn.disabled = !hasHeadings;
+
+                if (hasHeadings) {
+                    this.elements.navInfo.textContent = `${this.currentIndex + 1} von ${this.headings.length} Überschriften`;
+                }
+            }
+
+            readCurrentSection() {
+                if (this.currentIndex < 0 || this.currentIndex >= this.headings.length) return;
+
+                const heading = this.headings[this.currentIndex];
+                const textToRead = `${heading.level.toUpperCase()}: ${heading.text}. ${heading.followingText}`;
+                
+                this.speak(textToRead);
+            }
+
+            speak(text) {
+                this.stopReading();
+                
+                this.currentUtterance = new SpeechSynthesisUtterance(text);
+                this.currentUtterance.lang = 'de-DE';
+                this.currentUtterance.rate = this.speed;
+                this.currentUtterance.pitch = 1;
+                this.currentUtterance.volume = 1;
+
+                this.currentUtterance.onstart = () => {
+                    this.isReading = true;
+                    this.elements.stopBtn.disabled = false;
+                    this.elements.readBtn.textContent = '🔊 Liest vor...';
+                    this.elements.currentContent.classList.add('speaking');
+                };
+
+                this.currentUtterance.onend = () => {
+                    this.isReading = false;
+                    this.elements.stopBtn.disabled = true;
+                    this.elements.readBtn.textContent = '🔊 Vorlesen';
+                    this.elements.currentContent.classList.remove('speaking');
+                };
+
+                this.currentUtterance.onerror = (event) => {
+                    console.error('Speech synthesis error:', event);
+                    this.isReading = false;
+                    this.elements.stopBtn.disabled = true;
+                    this.elements.readBtn.textContent = '🔊 Vorlesen';
+                    this.elements.currentContent.classList.remove('speaking');
+                };
+
+                this.synthesis.speak(this.currentUtterance);
+            }
+
+            stopReading() {
+                if (this.isReading) {
+                    this.synthesis.cancel();
+                    this.isReading = false;
+                    this.elements.stopBtn.disabled = true;
+                    this.elements.readBtn.textContent = '🔊 Vorlesen';
+                    this.elements.currentContent.classList.remove('speaking');
+                }
+            }
+
+            adjustSpeed(delta) {
+                this.speed = Math.max(0.5, Math.min(2.0, this.speed + delta));
+                this.elements.speedSlider.value = this.speed;
+                this.elements.speedValue.textContent = this.speed.toFixed(1) + 'x';
+            }
+
+            updateStatus(message) {
+                this.elements.status.textContent = message;
+            }
+        }
+
+        // Initialisiere das Tool
+        document.addEventListener('DOMContentLoaded', () => {
+            new WebsiteReader();
+        });
+    </script>
+</body>
+</html>
